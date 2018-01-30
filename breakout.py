@@ -2,27 +2,23 @@
 # -*- coding: utf-8 -*-
 
 #
-# breakout
+# breakout using curses.
 # https://github.com/vesche
 #
 
 import curses
-import board
-import sys
 import time
+import board
 
-# 20x60 grid
-HEIGHT = 19
-WIDTH  = 59
-
-# blocks - 1x6
-BLOCK_SIZE = 6
+# consts
+HEIGHT = 19 # 20x60 grid
+WIDTH = 59
+BLOCK_SIZE = 6 # 1x6 block
+PADDLE_SIZE = 11
+DEBUG = True
 
 
 def game(stdscr):
-    # init game
-    win = curses.newwin(HEIGHT, WIDTH, 0, 0)
-
     # init colors
     curses.start_color()
     curses.use_default_colors()
@@ -33,72 +29,86 @@ def game(stdscr):
     running = True
     paddle_x = 27
     ball_x, ball_y = 32, 18
-    ball_velocity = 0
+    ball_vy, ball_xy = 0, 0
+    spin = None
 
     # init board
-    blocks = board.checker('pink', 'tan')
+    blocks = board.checker("white", "red")
 
+    # gameplay loop
     while running:
         # draw board
         for i in range(len(blocks)):
             color = blocks[i]
-            stdscr.addstr(i/10, i%10*6, ' '*6, curses.color_pair(color) | curses.A_REVERSE)
+            stdscr.addstr(i//10, i%10*6, ' '*6, curses.color_pair(color) | curses.A_REVERSE)
         # draw paddle
-        for i in range(11):
+        for i in range(PADDLE_SIZE):
             stdscr.addstr(19, i+paddle_x, ' ', curses.color_pair(0) | curses.A_REVERSE)
         # draw ball
         stdscr.addstr(ball_y, ball_x, '*', curses.color_pair(4) |  curses.A_BOLD)
 
         # handle input
-        c = stdscr.getch()
-        if c == curses.KEY_RIGHT:
+        key = stdscr.getch()
+        if key == curses.KEY_RIGHT:
             if paddle_x < 49:
                 paddle_x += 1
-                # if ball has not launched yet
-                if not ball_velocity:
+                # ball has not launched yet
+                if not ball_vy:
                     ball_x += 1
             # ball spin
-            spin = "left"
-        elif c == curses.KEY_LEFT:
+            if ball_y == 18:
+                spin = "left"
+        elif key == curses.KEY_LEFT:
             if paddle_x > 0:
                 paddle_x -= 1
-                # if ball has not launched yet
-                if not ball_velocity:
+                # ball has not launched yet
+                if not ball_vy:
                     ball_x -= 1
             # ball spin
-            spin = "right"
-        elif c == curses.KEY_UP:
-            ball_velocity = 1 # ball shit here
-        elif c == ord('q'):
-            running = False #sys.exit ?
+            if ball_y == 18:
+                spin = "right"
+        elif key == curses.KEY_UP:
+            ball_vy = 1
+        elif key == ord('q'):
+            running = False
 
-        # collision walls
-        # top wall
-
-        # bounce off top and bottom
+        # ball top collision (tmp)
         if ball_y == 0:
-            ball_velocity = 1
+            ball_vy = 1
+
+        # ball/paddle collision 
+        if ball_y == 18 and (paddle_x <= ball_x < paddle_x+PADDLE_SIZE):
+            ball_vy = -1
+
+        # ball misses paddle
         if ball_y == 19:
-            ball_velocity = -1
+            if DEBUG:
+                # reset ball
+                ball_vy = 0
+                ball_x, ball_y = paddle_x+5, 18
+                spin = None
+            else:
+                running = False
 
-        
+        # ball spin from paddle
+        if spin == "left":
+            ball_x -= 1
+        elif spin == "right":
+            ball_x += 1
 
-        # move ball up and down
-        if ball_velocity:
-            ball_y += ball_velocity
+        # ball left/right wall collision
+        if ball_x == 0:
+            spin = "right"
+        if ball_x == 59:
+            spin = "left"
 
+        # ball moving up and down
+        if ball_vy:
+            ball_y += ball_vy
 
-        # do things with ball
-
-        # check win condition?
-        # if tiles == wtiles: break
-
-        # curses.napms(2000)
-        # clear and refresh screen
+        # refresh, delay (30FPS), clear screen
         stdscr.refresh()
-
-        # 60 FPS
-        time.sleep(.0333)
+        time.sleep(1/30.0)
         stdscr.clear()
 
 
@@ -111,7 +121,7 @@ def main():
     curses.curs_set(0)
     stdscr.keypad(1)
 
-    # gameplay loop
+    # start game
     game(stdscr)
 
     # teardown curses

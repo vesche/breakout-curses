@@ -15,9 +15,9 @@ def checker(color_a, color_b):
     code_b = COLORS.index(color_b)
     for i in range(ROWS):
         if i % 2:
-            board += [code_a, code_b]*(COLS/2)
+            board += [code_a, code_b]*(COLS//2)
         else:
-            board += [code_a, code_b][::-1]*(COLS/2)
+            board += [code_a, code_b][::-1]*(COLS//2)
     return board
 
 def standard():
