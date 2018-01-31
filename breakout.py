@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# breakout using curses.
+# breakout using curses
 # https://github.com/vesche
 #
 
@@ -14,7 +14,10 @@ import board
 HEIGHT = 19 # 20x60 grid
 WIDTH = 59
 BLOCK_SIZE = 6 # 1x6 block
+B_ROWS = 5 # 10 blocks in top 5 rows
+B_COLS = 10
 PADDLE_SIZE = 11
+BLK = 17 # color code for black
 DEBUG = True
 
 
@@ -27,66 +30,86 @@ def game(stdscr):
 
     # init vars
     running = True
+    launched = False
     paddle_x = 27
-    ball_x, ball_y = 32, 18
-    ball_vy, ball_xy = 0, 0
+    ball_x, ball_y, ball_v = 32, 18, 0
     spin = None
 
     # init board
-    blocks = board.checker("white", "red")
+    blocks = board.checker("yellow", "blue")
 
     # gameplay loop
     while running:
         # draw board
         for i in range(len(blocks)):
             color = blocks[i]
-            stdscr.addstr(i//10, i%10*6, ' '*6, curses.color_pair(color) | curses.A_REVERSE)
+            stdscr.addstr(i//B_COLS, i%B_COLS*BLOCK_SIZE, ' '*BLOCK_SIZE,
+                curses.color_pair(color) | curses.A_REVERSE)
+
         # draw paddle
         for i in range(PADDLE_SIZE):
-            stdscr.addstr(19, i+paddle_x, ' ', curses.color_pair(0) | curses.A_REVERSE)
+            stdscr.addstr(HEIGHT, i+paddle_x, ' ',
+                curses.color_pair(0) | curses.A_REVERSE)
+
         # draw ball
-        stdscr.addstr(ball_y, ball_x, '*', curses.color_pair(4) |  curses.A_BOLD)
+        stdscr.addstr(ball_y, ball_x, '*',
+            curses.color_pair(4) |  curses.A_BOLD)
 
         # handle input
         key = stdscr.getch()
+
+        # move paddle right
         if key == curses.KEY_RIGHT:
             if paddle_x < 49:
                 paddle_x += 1
-                # ball has not launched yet
-                if not ball_vy:
+                # ball not yet launched
+                if not ball_v:
                     ball_x += 1
             # ball spin
-            if ball_y == 18:
+            if ball_y == 18 and ball_v:
                 spin = "left"
+
+        # move paddle left
         elif key == curses.KEY_LEFT:
             if paddle_x > 0:
                 paddle_x -= 1
-                # ball has not launched yet
-                if not ball_vy:
+                # ball not yet launched
+                if not ball_v:
                     ball_x -= 1
             # ball spin
-            if ball_y == 18:
+            if ball_y == 18 and ball_v:
                 spin = "right"
+
+        # move up (launch ball)
         elif key == curses.KEY_UP:
-            ball_vy = 1
+            ball_v = -1
+            launched = True
+
+        # quit game
         elif key == ord('q'):
             running = False
 
-        # ball top collision (tmp)
+        # ball top collision
         if ball_y == 0:
-            ball_vy = 1
+            ball_v = 1
 
-        # ball/paddle collision 
-        if ball_y == 18 and (paddle_x <= ball_x < paddle_x+PADDLE_SIZE):
-            ball_vy = -1
+        # ball/paddle collision
+        if launched and ball_y == 18 and \
+        (paddle_x <= ball_x < paddle_x+PADDLE_SIZE):
+            ball_v = -1
+        
+        # ball brick collision
+        if ball_y < B_ROWS and (blocks[B_COLS*ball_y + ball_x//BLOCK_SIZE] != BLK):
+            ball_v = 1
+            blocks[B_COLS*ball_y + ball_x//BLOCK_SIZE] = BLK
 
-        # ball misses paddle
-        if ball_y == 19:
+        # ball misses paddle and passes outside of map
+        if ball_y == 20:
             if DEBUG:
                 # reset ball
-                ball_vy = 0
-                ball_x, ball_y = paddle_x+5, 18
+                ball_x, ball_y, ball_v = paddle_x+5, 18, 0
                 spin = None
+                launched = False
             else:
                 running = False
 
@@ -103,12 +126,12 @@ def game(stdscr):
             spin = "left"
 
         # ball moving up and down
-        if ball_vy:
-            ball_y += ball_vy
+        if ball_v:
+            ball_y += ball_v
 
         # refresh, delay (30FPS), clear screen
         stdscr.refresh()
-        time.sleep(1/30.0)
+        time.sleep(1/24.0)
         stdscr.clear()
 
 
