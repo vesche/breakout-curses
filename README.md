@@ -1,6 +1,6 @@
 # breakout-curses
 
-This is a primitive [breakout](https://en.wikipedia.org/wiki/Breakout_(video_game)) clone in Python that I made to learn more about curses.
+This is a primitive [Breakout](https://en.wikipedia.org/wiki/Breakout_(video_game)) clone in Python that I made to learn more about curses.
 
 ![gameplay](gameplay.gif)
 
