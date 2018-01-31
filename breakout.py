@@ -129,7 +129,7 @@ def game(stdscr):
         if ball_v:
             ball_y += ball_v
 
-        # refresh, delay (30FPS), clear screen
+        # refresh, delay (24FPS), clear screen
         stdscr.refresh()
         time.sleep(1/24.0)
         stdscr.clear()
