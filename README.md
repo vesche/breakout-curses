@@ -12,7 +12,7 @@ $ python breakout.py
 ```
 
 ## Fixing the "paddle stutter"
-On most Linux terminals the keyboard auto repeat rate is going to be too high and will making playing the game difficult. To see what your current settings are run `xset -q` and look for the values `auto repeat delay` and `repeat rate`.
+On most Linux terminals the keyboard auto repeat rate is going to be too high and will make playing the game difficult. To see what your current settings are run `xset -q` and look for the values auto repeat delay and repeat rate.
 
 I recommend you adjust like so for playing: `xset -r 250 25`
 
