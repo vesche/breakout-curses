@@ -89,8 +89,9 @@ def game(stdscr):
 
         # move up (launch ball)
         elif key == curses.KEY_UP:
-            ball_v = -1
-            launched = True
+            if not launched:
+                ball_v = -1
+                launched = True
 
         # quit game
         elif key == ord('q'):
