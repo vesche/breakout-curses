@@ -34,12 +34,16 @@ def game(stdscr):
     paddle_x = 27
     ball_x, ball_y, ball_v = 32, 18, 0
     spin = None
+    block_spin = None
 
     # init board
     blocks = board.checker("yellow", "blue")
 
     # gameplay loop
     while running:
+        ##############
+        # draw scene #
+        ##############
         # draw board
         for i in range(len(blocks)):
             color = blocks[i]
@@ -55,7 +59,10 @@ def game(stdscr):
         stdscr.addstr(ball_y, ball_x, '*',
             curses.color_pair(4) |  curses.A_BOLD)
 
-        # handle input
+        ################
+        # handle input #
+        ################
+        # get key
         key = stdscr.getch()
 
         # move paddle right
@@ -89,6 +96,9 @@ def game(stdscr):
         elif key == ord('q'):
             running = False
 
+        ##############
+        # game logic #
+        ##############
         # ball top collision
         if ball_y == 0:
             ball_v = 1
@@ -97,11 +107,27 @@ def game(stdscr):
         if launched and ball_y == 18 and \
         (paddle_x <= ball_x < paddle_x+PADDLE_SIZE):
             ball_v = -1
-        
+
         # ball brick collision
-        if ball_y < B_ROWS and (blocks[B_COLS*ball_y + ball_x//BLOCK_SIZE] != BLK):
-            ball_v = 1
-            blocks[B_COLS*ball_y + ball_x//BLOCK_SIZE] = BLK
+        if ball_y-1 < B_ROWS:
+            # this is hacky (collision should have its own funcs)
+            for i in range(1):
+                # break block above
+                if (blocks[B_COLS*(ball_y-1) + ball_x//BLOCK_SIZE] != BLK):
+                    ball_v = 1
+                    blocks[B_COLS*(ball_y-1) + ball_x//BLOCK_SIZE] = BLK
+                    break
+                # break block to side and get new spin
+                try:
+                    if spin == "right":
+                        if (blocks[B_COLS*(ball_y) + (ball_x+1)//BLOCK_SIZE] != BLK):
+                            blocks[B_COLS*(ball_y) + (ball_x+1)//BLOCK_SIZE] = BLK
+                            spin = "left"
+                    elif spin == "left":
+                        if (blocks[B_COLS*(ball_y) + (ball_x-1)//BLOCK_SIZE] != BLK):
+                            blocks[B_COLS*(ball_y) + (ball_x-1)//BLOCK_SIZE] = BLK
+                            spin = "right"
+                except: pass
 
         # ball misses paddle and passes outside of map
         if ball_y == 20:
@@ -119,7 +145,7 @@ def game(stdscr):
         elif spin == "right":
             ball_x += 1
 
-        # ball left/right wall collision
+        # ball spin wall collision
         if ball_x == 0:
             spin = "right"
         if ball_x == 59:
@@ -129,6 +155,9 @@ def game(stdscr):
         if ball_v:
             ball_y += ball_v
 
+        ###########
+        # display #
+        ###########
         # refresh, delay (24FPS), clear screen
         stdscr.refresh()
         time.sleep(1/24.0)
